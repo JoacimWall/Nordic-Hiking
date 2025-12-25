@@ -1,0 +1,77 @@
+using System.Text.Json;
+using Anthropic.SDK;
+using Anthropic.SDK.Constants;
+using Anthropic.SDK.Messaging;
+using NordicHiking.Core.Interfaces;
+
+namespace NordicHiking.Admin.Services;
+
+public class ClaudeAnalysisService : IAiAnalysisService
+{
+    private readonly AnthropicClient _client;
+
+    public ClaudeAnalysisService(IConfiguration configuration)
+    {
+        var apiKey = configuration["Claude:ApiKey"]
+            ?? throw new InvalidOperationException("Claude API key not configured");
+        _client = new AnthropicClient(apiKey);
+    }
+
+    public async Task<HikeAnalysisResult> AnalyzeVideoAsync(string title, string description, string? transcript)
+    {
+        var prompt = $@"Analysera följande video om vandring:
+Titel: {title}
+Beskrivning: {description}
+Transkript: {transcript ?? "Ej tillgängligt"}
+
+Extrahera följande information som JSON:
+- places: Lista med platser som nämns (namn, region, land)
+- summary: Kort sammanfattning av vandringen (max 100 ord)
+- difficulty: Uppskattad svårighetsgrad (lätt/medel/svår)
+- duration: Om vandringens längd nämns (annars null)
+- confidence: Hur säker du är på platserna (hög/medel/låg)
+
+Svara ENDAST med JSON, ingen annan text.";
+
+        var messages = new List<Message>
+        {
+            new Message(RoleType.User, prompt)
+        };
+
+        var parameters = new MessageParameters
+        {
+            Messages = messages,
+            Model = "claude-sonnet-4-20250514",
+            MaxTokens = 2000,
+            Temperature = 0.3m
+        };
+
+        var response = await _client.Messages.GetClaudeMessageAsync(parameters);
+        var jsonContent = response.Content.OfType<TextContent>().First().Text;
+
+        // Ta bort markdown code blocks om de finns
+        jsonContent = jsonContent.Trim();
+        if (jsonContent.StartsWith("```json"))
+        {
+            jsonContent = jsonContent.Substring(7); // Ta bort ```json
+        }
+        else if (jsonContent.StartsWith("```"))
+        {
+            jsonContent = jsonContent.Substring(3); // Ta bort ```
+        }
+
+        if (jsonContent.EndsWith("```"))
+        {
+            jsonContent = jsonContent.Substring(0, jsonContent.Length - 3); // Ta bort ```
+        }
+
+        jsonContent = jsonContent.Trim();
+
+        var result = JsonSerializer.Deserialize<HikeAnalysisResult>(jsonContent, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        return result ?? new HikeAnalysisResult();
+    }
+}

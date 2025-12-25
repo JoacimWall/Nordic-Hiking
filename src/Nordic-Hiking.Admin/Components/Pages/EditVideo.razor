@@ -1,0 +1,267 @@
+@page "/videos/edit/{VideoId:int}"
+@using Microsoft.EntityFrameworkCore
+@using NordicHiking.Core.Interfaces
+@using NordicHiking.Core.Models
+@using NordicHiking.Data
+@inject AppDbContext DbContext
+@inject IGeocodingService GeocodingService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Redigera Video</PageTitle>
+
+@if (video == null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <h1>Redigera Video</h1>
+
+    <div class="mb-3">
+        <a href="/videos/@video.ChannelId" class="btn btn-secondary">Tillbaka till videor</a>
+        <button class="btn btn-success" @onclick="SaveChanges" disabled="@isSaving">
+            @if (isSaving)
+            {
+                <span class="spinner-border spinner-border-sm"></span><text> Sparar...</text>
+            }
+            else
+            {
+                <text>Spara ändringar</text>
+            }
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert alert-info">@statusMessage</div>
+    }
+
+    <div class="row">
+        <div class="col-md-4">
+            <img src="@video.ThumbnailUrl" alt="Thumbnail" class="img-fluid mb-3" />
+        </div>
+        <div class="col-md-8">
+            <h3>@video.Title</h3>
+            <p><strong>Publicerad:</strong> @video.PublishedAt.ToString("yyyy-MM-dd")</p>
+            <p><strong>YouTube ID:</strong> @video.YoutubeVideoId</p>
+            <p><strong>Processad:</strong> @(video.IsProcessed ? "Ja" : "Nej")</p>
+
+            <div class="mb-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="showOnMapCheck" @bind="video.ShowOnMap" />
+                    <label class="form-check-label" for="showOnMapCheck">
+                        <strong>Visa på karta</strong>
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label"><strong>Beskrivning:</strong></label>
+                <textarea class="form-control" rows="4" readonly>@video.Description</textarea>
+            </div>
+
+            @if (!string.IsNullOrEmpty(video.Transcript))
+            {
+                <div class="mb-3">
+                    <label class="form-label"><strong>Transkript:</strong></label>
+                    <textarea class="form-control" rows="6" readonly>@video.Transcript</textarea>
+                </div>
+            }
+        </div>
+    </div>
+
+    <hr class="my-4" />
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Platser (@locations.Count)</h3>
+        <button class="btn btn-primary" @onclick="AddNewLocation">Lägg till plats</button>
+    </div>
+
+    @if (!locations.Any())
+    {
+        <p>Inga platser hittades för denna video.</p>
+    }
+    else
+    {
+        @foreach (var location in locations)
+        {
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Platsnamn</label>
+                                <input type="text" class="form-control" @bind="location.PlaceName" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Region</label>
+                                <input type="text" class="form-control" @bind="location.Region" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Land</label>
+                                <input type="text" class="form-control" @bind="location.Country" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Latitude</label>
+                                <input type="number" step="0.000001" class="form-control" @bind="location.Latitude" />
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Longitude</label>
+                                <input type="number" step="0.000001" class="form-control" @bind="location.Longitude" />
+                            </div>
+                            <button class="btn btn-sm btn-info" @onclick="() => Regeocode(location)">
+                                Hämta nya koordinater
+                            </button>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label class="form-label">Sammanfattning</label>
+                                <textarea class="form-control" rows="3" @bind="location.Summary"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Svårighetsgrad</label>
+                                <select class="form-select" @bind="location.Difficulty">
+                                    <option value="lätt">Lätt</option>
+                                    <option value="medel">Medel</option>
+                                    <option value="svår">Svår</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Varaktighet</label>
+                                <input type="text" class="form-control" @bind="location.Duration" placeholder="T.ex. 2 timmar" />
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">Konfidensgrad</label>
+                                <select class="form-select" @bind="location.Confidence">
+                                    <option value="hög">Hög</option>
+                                    <option value="medel">Medel</option>
+                                    <option value="låg">Låg</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" @onclick="() => RemoveLocation(location)">
+                        Ta bort plats
+                    </button>
+                </div>
+            </div>
+        }
+    }
+}
+
+@code {
+    [Parameter]
+    public int VideoId { get; set; }
+
+    private Video? video;
+    private List<HikeLocation> locations = new();
+    private bool isSaving = false;
+    private string statusMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVideo();
+    }
+
+    private async Task LoadVideo()
+    {
+        video = await DbContext.Videos
+            .Include(v => v.Channel)
+            .FirstOrDefaultAsync(v => v.Id == VideoId);
+
+        if (video != null)
+        {
+            locations = await DbContext.HikeLocations
+                .Where(l => l.VideoId == VideoId)
+                .ToListAsync();
+        }
+    }
+
+    private void AddNewLocation()
+    {
+        locations.Add(new HikeLocation
+        {
+            VideoId = VideoId,
+            PlaceName = "",
+            Region = "",
+            Country = "Sverige",
+            Latitude = 0,
+            Longitude = 0,
+            Summary = "",
+            Difficulty = "medel",
+            Confidence = "medel"
+        });
+    }
+
+    private void RemoveLocation(HikeLocation location)
+    {
+        locations.Remove(location);
+        if (location.Id > 0)
+        {
+            DbContext.HikeLocations.Remove(location);
+        }
+    }
+
+    private async Task Regeocode(HikeLocation location)
+    {
+        statusMessage = "Hämtar koordinater...";
+        var coords = await GeocodingService.GetCoordinatesAsync(location.PlaceName, location.Region, location.Country);
+
+        if (coords.HasValue)
+        {
+            location.Latitude = coords.Value.Latitude;
+            location.Longitude = coords.Value.Longitude;
+            statusMessage = "Koordinater uppdaterade!";
+        }
+        else
+        {
+            statusMessage = "Kunde inte hitta koordinater för denna plats.";
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        isSaving = true;
+        statusMessage = "Sparar ändringar...";
+
+        try
+        {
+            // Uppdatera befintliga platser och lägg till nya
+            foreach (var location in locations)
+            {
+                if (location.Id == 0)
+                {
+                    DbContext.HikeLocations.Add(location);
+                }
+                else
+                {
+                    DbContext.HikeLocations.Update(location);
+                }
+            }
+
+            await DbContext.SaveChangesAsync();
+            statusMessage = "Ändringar sparade!";
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Fel vid sparande: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+}

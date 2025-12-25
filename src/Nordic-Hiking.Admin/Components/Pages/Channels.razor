@@ -1,0 +1,146 @@
+@page "/"
+@using Microsoft.EntityFrameworkCore
+@using NordicHiking.Core.Interfaces
+@using NordicHiking.Core.Models
+@using NordicHiking.Data
+@inject AppDbContext DbContext
+@inject IYouTubeService YouTubeService
+@rendermode InteractiveServer
+
+<PageTitle>Kanaler</PageTitle>
+
+<h1>YouTube Kanaler</h1>
+
+<div class="mb-4">
+    <h3>Lägg till ny kanal</h3>
+    <div class="input-group">
+        <input type="text" class="form-control" @bind="channelUrl" placeholder="YouTube kanal-URL" />
+        <button class="btn btn-primary" @onclick="AddChannel" disabled="@isAdding">
+            @if (isAdding)
+            {
+                <span class="spinner-border spinner-border-sm"></span><text> Läser in...</text>
+            }
+            else
+            {
+                <text>Lägg till</text>
+            }
+        </button>
+    </div>
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger mt-2">@errorMessage</div>
+    }
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success mt-2">@successMessage</div>
+    }
+</div>
+
+<h3>Befintliga kanaler</h3>
+@if (channels == null)
+{
+    <p>Laddar...</p>
+}
+else if (!channels.Any())
+{
+    <p>Inga kanaler hittades.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Namn</th>
+                <th>URL</th>
+                <th>Tillagd</th>
+                <th>Antal videor</th>
+                <th>Åtgärder</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var channel in channels)
+            {
+                <tr>
+                    <td>@channel.Name</td>
+                    <td><a href="@channel.Url" target="_blank">@channel.Url</a></td>
+                    <td>@channel.AddedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@channel.Videos.Count</td>
+                    <td>
+                        <a href="/videos/@channel.Id" class="btn btn-sm btn-info">Visa videor</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Channel>? channels;
+    private string channelUrl = "";
+    private string errorMessage = "";
+    private string successMessage = "";
+    private bool isAdding = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadChannels();
+    }
+
+    private async Task LoadChannels()
+    {
+        channels = await DbContext.Channels
+            .Include(c => c.Videos)
+            .OrderByDescending(c => c.AddedAt)
+            .ToListAsync();
+    }
+
+    private async Task AddChannel()
+    {
+        errorMessage = "";
+        successMessage = "";
+        isAdding = true;
+
+        try
+        {
+            if (string.IsNullOrWhiteSpace(channelUrl))
+            {
+                errorMessage = "Ange en kanal-URL";
+                return;
+            }
+
+            var (channelId, channelName) = await YouTubeService.GetChannelInfoAsync(channelUrl);
+
+            var existingChannel = await DbContext.Channels
+                .FirstOrDefaultAsync(c => c.YoutubeChannelId == channelId);
+
+            if (existingChannel != null)
+            {
+                errorMessage = "Kanalen finns redan";
+                return;
+            }
+
+            var newChannel = new Channel
+            {
+                YoutubeChannelId = channelId,
+                Name = channelName,
+                Url = channelUrl,
+                AddedAt = DateTime.UtcNow
+            };
+
+            DbContext.Channels.Add(newChannel);
+            await DbContext.SaveChangesAsync();
+
+            successMessage = $"Kanalen '{channelName}' har lagts till!";
+            channelUrl = "";
+            await LoadChannels();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Fel: {ex.Message}";
+        }
+        finally
+        {
+            isAdding = false;
+        }
+    }
+}

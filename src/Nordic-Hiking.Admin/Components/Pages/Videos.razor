@@ -1,0 +1,224 @@
+@page "/videos/{ChannelId:int}"
+@using Microsoft.EntityFrameworkCore
+@using NordicHiking.Core.Interfaces
+@using NordicHiking.Core.Models
+@using NordicHiking.Data
+@inject AppDbContext DbContext
+@inject IYouTubeService YouTubeService
+@inject IAiAnalysisService AiService
+@inject IGeocodingService GeocodingService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Videor - @channel?.Name</PageTitle>
+
+@if (channel == null)
+{
+    <p>Laddar...</p>
+}
+else
+{
+    <h1>Videor från @channel.Name</h1>
+
+    <div class="mb-3">
+        <a href="/channels" class="btn btn-secondary">Tillbaka till kanaler</a>
+        <button class="btn btn-primary" @onclick="FetchVideos" disabled="@isFetching">
+            @if (isFetching)
+            {
+                <span class="spinner-border spinner-border-sm"></span><text> Hämtar videor...</text>
+            }
+            else
+            {
+                <text>Hämta videor från YouTube</text>
+            }
+        </button>
+    </div>
+
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert alert-info">@statusMessage</div>
+    }
+
+    @if (videos == null)
+    {
+        <p>Laddar videor...</p>
+    }
+    else if (!videos.Any())
+    {
+        <p>Inga videor hittades. Klicka på "Hämta videor från YouTube" för att ladda in.</p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Thumbnail</th>
+                    <th>Titel</th>
+                    <th>Publicerad</th>
+                    <th>Status</th>
+                    <th>Platser</th>
+                    <th>Åtgärder</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var video in videos)
+                {
+                    <tr>
+                        <td><img src="@video.ThumbnailUrl" alt="Thumbnail" style="width: 120px;" /></td>
+                        <td>@video.Title</td>
+                        <td>@video.PublishedAt.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            @if (video.IsProcessed)
+                            {
+                                <span class="badge bg-success">Processad</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning">Ej processad</span>
+                            }
+                        </td>
+                        <td>@video.Locations.Count</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" @onclick="() => ProcessVideo(video.Id)" disabled="@(processingVideoId == video.Id)">
+                                @if (processingVideoId == video.Id)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                }
+                                else
+                                {
+                                    <text>Processa</text>
+                                }
+                            </button>
+                            <a href="/videos/edit/@video.Id" class="btn btn-sm btn-secondary ms-1">Redigera</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    [Parameter]
+    public int ChannelId { get; set; }
+
+    private Channel? channel;
+    private List<Video>? videos;
+    private bool isFetching = false;
+    private int? processingVideoId = null;
+    private string statusMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        channel = await DbContext.Channels.FindAsync(ChannelId);
+        if (channel != null)
+        {
+            await LoadVideos();
+        }
+    }
+
+    private async Task LoadVideos()
+    {
+        videos = await DbContext.Videos
+            .Include(v => v.Locations)
+            .Where(v => v.ChannelId == ChannelId)
+            .OrderByDescending(v => v.PublishedAt)
+            .ToListAsync();
+    }
+
+    private async Task FetchVideos()
+    {
+        isFetching = true;
+        statusMessage = "Hämtar videor från YouTube...";
+
+        try
+        {
+            var fetchedVideos = await YouTubeService.GetVideosFromChannelAsync(channel!.YoutubeChannelId);
+            var addedCount = 0;
+
+            foreach (var video in fetchedVideos)
+            {
+                var exists = await DbContext.Videos.AnyAsync(v => v.YoutubeVideoId == video.YoutubeVideoId);
+                if (!exists)
+                {
+                    video.ChannelId = ChannelId;
+                    DbContext.Videos.Add(video);
+                    addedCount++;
+                }
+            }
+
+            await DbContext.SaveChangesAsync();
+            statusMessage = $"{addedCount} nya videor tillagda!";
+            await LoadVideos();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Fel: {ex.Message}";
+        }
+        finally
+        {
+            isFetching = false;
+        }
+    }
+
+    private async Task ProcessVideo(int videoId)
+    {
+        processingVideoId = videoId;
+        statusMessage = "Processar video...";
+
+        try
+        {
+            var video = await DbContext.Videos.FindAsync(videoId);
+            if (video == null) return;
+
+            // Hämta transkript
+            statusMessage = "Hämtar transkript...";
+            video.Transcript = await YouTubeService.GetVideoTranscriptAsync(video.YoutubeVideoId);
+
+            // AI-analys
+            statusMessage = "Analyserar med AI...";
+            var analysis = await AiService.AnalyzeVideoAsync(video.Title, video.Description, video.Transcript);
+
+            // Geokodning
+            statusMessage = "Hämtar koordinater...";
+            foreach (var place in analysis.Places)
+            {
+                var coords = await GeocodingService.GetCoordinatesAsync(place.Name, place.Region, place.Country);
+
+                if (coords.HasValue)
+                {
+                    var location = new HikeLocation
+                    {
+                        PlaceName = place.Name,
+                        Region = place.Region,
+                        Country = place.Country,
+                        Latitude = coords.Value.Latitude,
+                        Longitude = coords.Value.Longitude,
+                        Summary = analysis.Summary,
+                        Difficulty = analysis.Difficulty,
+                        Duration = analysis.Duration,
+                        Confidence = analysis.Confidence,
+                        VideoId = videoId
+                    };
+
+                    DbContext.HikeLocations.Add(location);
+                }
+            }
+
+            video.IsProcessed = true;
+            video.ShowOnMap = true;
+            await DbContext.SaveChangesAsync();
+
+            statusMessage = "Video processad!";
+            await LoadVideos();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Fel: {ex.Message}";
+        }
+        finally
+        {
+            processingVideoId = null;
+        }
+    }
+}

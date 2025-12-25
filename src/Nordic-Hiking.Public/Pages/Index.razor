@@ -1,0 +1,105 @@
+@page "/"
+@using NordicHiking.Public.Services
+@inject HikeDataService HikeDataService
+@inject IJSRuntime JS
+
+<PageTitle>Vandringskarta</PageTitle>
+
+<div class="container-fluid p-0">
+    <div class="row g-0">
+        <div class="col-12">
+            <div class="p-3 bg-light">
+                <h1>Vandringskarta</h1>
+                <p>Utforska vandringsleder från YouTube-kanaler</p>
+
+                @if (isLoading)
+                {
+                    <div class="alert alert-info">
+                        <span class="spinner-border spinner-border-sm"></span> Laddar platser...
+                    </div>
+                }
+                else if (locations.Count == 0)
+                {
+                    <div class="alert alert-warning">
+                        Inga platser hittades. Kontrollera att hikes.db finns i wwwroot/data/.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success">
+                        @locations.Count platser laddade
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-0">
+        <div class="col-12">
+            <div id="map" style="height: 80vh; width: 100%;"></div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<HikeLocationDto> locations = new();
+    private bool isLoading = true;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await LoadData();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            locations = await HikeDataService.GetAllLocationsAsync();
+
+            if (locations.Count > 0)
+            {
+                // Initiera kartan centrerad på första platsen (Sverige som default)
+                var firstLocation = locations.FirstOrDefault();
+                var centerLat = firstLocation?.Latitude ?? 62.0;
+                var centerLng = firstLocation?.Longitude ?? 15.0;
+
+                await JS.InvokeVoidAsync("mapHelper.initializeMap", "map", centerLat, centerLng, 5);
+
+                // Lägg till alla markers
+                foreach (var location in locations)
+                {
+                    var popupHtml = $@"
+                        <div style='min-width: 250px;'>
+                            <h5>{location.PlaceName}</h5>
+                            <p><strong>{location.Region}, {location.Country}</strong></p>
+                            <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 300px;' /><br/>
+                            <strong>Video:</strong> {location.VideoTitle}<br/>
+                            <strong>Kanal:</strong> {location.ChannelName}<br/>
+                            <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
+                            {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
+                            <p>{location.Summary}</p>
+                            <a href='{location.VideoUrl}' target='_blank' class='btn btn-sm btn-primary'>Se video på YouTube</a>
+                        </div>
+                    ";
+
+                    await JS.InvokeVoidAsync("mapHelper.addMarker", location.Latitude, location.Longitude, popupHtml);
+                }
+
+                // Anpassa kartan så alla markers syns
+                await JS.InvokeVoidAsync("mapHelper.fitBounds");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}
