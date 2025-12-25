@@ -3,8 +3,10 @@
 @using NordicHiking.Core.Interfaces
 @using NordicHiking.Core.Models
 @using NordicHiking.Data
+@using NordicHiking.Admin.Services
 @inject AppDbContext DbContext
 @inject IGeocodingService GeocodingService
+@inject VideoProcessingService VideoProcessingService
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
 @rendermode InteractiveServer
@@ -30,6 +32,16 @@ else
                 <text>Spara ändringar</text>
             }
         </button>
+        <button class="btn btn-warning" @onclick="ProcessVideo" disabled="@isProcessing">
+            @if (isProcessing)
+            {
+                <span class="spinner-border spinner-border-sm"></span><text> Processar...</text>
+            }
+            else
+            {
+                <text>🔄 Processa video</text>
+            }
+        </button>
         <a href="https://www.youtube.com/watch?v=@video.YoutubeVideoId" target="_blank" class="btn btn-danger">
             ▶ Öppna på YouTube
         </a>
@@ -48,7 +60,7 @@ else
             {
                 <div class="mb-3">
                     <label class="form-label"><strong>Platser på karta:</strong></label>
-                    <div id="locationMap" style="height: 250px; width: 100%; border-radius: 8px; border: 1px solid #ddd;"></div>
+                    <div id="locationMap" style="height: 500px; width: 100%; border-radius: 8px; border: 1px solid #ddd;"></div>
                 </div>
             }
         </div>
@@ -188,6 +200,7 @@ else
     private Video? video;
     private List<HikeLocation> locations = new();
     private bool isSaving = false;
+    private bool isProcessing = false;
     private string statusMessage = "";
 
     protected override async Task OnInitializedAsync()
@@ -211,7 +224,7 @@ else
         var centerLat = validLocations.Average(l => l.Latitude);
         var centerLng = validLocations.Average(l => l.Longitude);
 
-        await JS.InvokeVoidAsync("editVideoMap.initializeMap", "locationMap", centerLat, centerLng, 4);
+        await JS.InvokeVoidAsync("editVideoMap.initializeMap", "locationMap", centerLat, centerLng, 6);
 
         foreach (var location in validLocations)
         {
@@ -270,6 +283,7 @@ else
             location.Latitude = coords.Value.Latitude;
             location.Longitude = coords.Value.Longitude;
             statusMessage = "Koordinater uppdaterade!";
+            await InitializeMap();
         }
         else
         {
@@ -299,6 +313,7 @@ else
 
             await DbContext.SaveChangesAsync();
             statusMessage = "Ändringar sparade!";
+            await InitializeMap();
         }
         catch (Exception ex)
         {
@@ -308,5 +323,37 @@ else
         {
             isSaving = false;
         }
+    }
+
+    private async Task ProcessVideo()
+    {
+        if (video == null) return;
+        
+        isProcessing = true;
+        statusMessage = "Processar video...";
+        StateHasChanged();
+
+        try
+        {
+            VideoProcessingService.OnStatusChanged += OnProcessingStatusChanged;
+            locations = await VideoProcessingService.ProcessVideoAsync(video);
+            await InitializeMap();
+        }
+        catch (Exception ex)
+        {
+            statusMessage = $"Fel: {ex.Message}";
+        }
+        finally
+        {
+            VideoProcessingService.OnStatusChanged -= OnProcessingStatusChanged;
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnProcessingStatusChanged(string status)
+    {
+        statusMessage = status;
+        InvokeAsync(StateHasChanged);
     }
 }

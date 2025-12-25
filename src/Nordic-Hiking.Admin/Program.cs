@@ -16,6 +16,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<NordicHiking.Core.Interfaces.IYouTubeService, NordicHiking.Admin.Services.YouTubeService>();
 builder.Services.AddScoped<NordicHiking.Core.Interfaces.IAiAnalysisService, NordicHiking.Admin.Services.ClaudeAnalysisService>();
 builder.Services.AddSingleton<NordicHiking.Core.Interfaces.IGeocodingService, NordicHiking.Admin.Services.GeocodingService>();
+builder.Services.AddScoped<NordicHiking.Admin.Services.VideoProcessingService>();
 
 var app = builder.Build();
 

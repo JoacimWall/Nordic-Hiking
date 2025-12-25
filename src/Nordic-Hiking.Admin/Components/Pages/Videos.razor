@@ -3,10 +3,10 @@
 @using NordicHiking.Core.Interfaces
 @using NordicHiking.Core.Models
 @using NordicHiking.Data
+@using NordicHiking.Admin.Services
 @inject AppDbContext DbContext
 @inject IYouTubeService YouTubeService
-@inject IAiAnalysisService AiService
-@inject IGeocodingService GeocodingService
+@inject VideoProcessingService VideoProcessingService
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -171,52 +171,9 @@ else
             var video = await DbContext.Videos.FindAsync(videoId);
             if (video == null) return;
 
-            // Hämta transkript
-            statusMessage = "Hämtar transkript...";
-            video.Transcript = await YouTubeService.GetVideoTranscriptAsync(video.YoutubeVideoId);
-
-            // Sammanfatta transkriptet
-            if (!string.IsNullOrEmpty(video.Transcript))
-            {
-                statusMessage = "Sammanfattar transkript...";
-                video.VideoTalkSummary = await AiService.SummarizeTranscriptAsync(video.Transcript);
-            }
-
-            // AI-analys
-            statusMessage = "Analyserar med AI...";
-            var analysis = await AiService.AnalyzeVideoAsync(video.Title, video.Description, video.Transcript);
-
-            // Geokodning
-            statusMessage = "Hämtar koordinater...";
-            //var firstPlace = analysis.Places.OrderBy(x => x.Name);
-            foreach (var place in analysis.Places.OrderBy(x => x.Name))
-            {
-                var coords = await GeocodingService.GetCoordinatesAsync(place.Name, place.Region, place.Country);
-            
-                if (coords.HasValue)
-                {
-                    var location = new HikeLocation
-                    {
-                        PlaceName = place.Name,
-                        Region = place.Region,
-                        Country = place.Country,
-                        Latitude = coords.Value.Latitude,
-                        Longitude = coords.Value.Longitude,
-                        Summary = analysis.Summary,
-                        Difficulty = analysis.Difficulty,
-                        Duration = analysis.Duration,
-                        Confidence = analysis.Confidence,
-                        VideoId = videoId
-                    };
-            
-                    DbContext.HikeLocations.Add(location);
-                    break;
-                }
-            }
-
-            video.IsProcessed = true;
-            video.ShowOnMap = true;
-            await DbContext.SaveChangesAsync();
+            VideoProcessingService.OnStatusChanged += OnProcessingStatusChanged;
+            await VideoProcessingService.ProcessVideoAsync(video);
+            VideoProcessingService.OnStatusChanged -= OnProcessingStatusChanged;
 
             statusMessage = "Video processad!";
             await LoadVideos();
@@ -229,5 +186,11 @@ else
         {
             processingVideoId = null;
         }
+    }
+
+    private void OnProcessingStatusChanged(string status)
+    {
+        statusMessage = status;
+        InvokeAsync(StateHasChanged);
     }
 }
