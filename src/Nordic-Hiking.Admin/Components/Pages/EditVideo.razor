@@ -6,6 +6,7 @@
 @inject AppDbContext DbContext
 @inject IGeocodingService GeocodingService
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 @rendermode InteractiveServer
 
 <PageTitle>Redigera Video</PageTitle>
@@ -43,6 +44,14 @@ else
     <div class="row">
         <div class="col-md-4">
             <img src="@video.ThumbnailUrl" alt="Thumbnail" class="img-fluid mb-3" />
+            
+            @if (locations.Any())
+            {
+                <div class="mb-3">
+                    <label class="form-label"><strong>Platser på karta:</strong></label>
+                    <div id="locationMap" style="height: 250px; width: 100%; border-radius: 8px; border: 1px solid #ddd;"></div>
+                </div>
+            }
         </div>
         <div class="col-md-8">
             <h3>@video.Title</h3>
@@ -185,6 +194,32 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadVideo();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && locations.Any())
+        {
+            await InitializeMap();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        var validLocations = locations.Where(l => l.Latitude != 0 && l.Longitude != 0).ToList();
+        if (!validLocations.Any()) return;
+
+        var centerLat = validLocations.Average(l => l.Latitude);
+        var centerLng = validLocations.Average(l => l.Longitude);
+
+        await JS.InvokeVoidAsync("editVideoMap.initializeMap", "locationMap", centerLat, centerLng, 4);
+
+        foreach (var location in validLocations)
+        {
+            await JS.InvokeVoidAsync("editVideoMap.addMarker", location.Latitude, location.Longitude, location.PlaceName);
+        }
+
+        await JS.InvokeVoidAsync("editVideoMap.fitBounds");
     }
 
     private async Task LoadVideo()
