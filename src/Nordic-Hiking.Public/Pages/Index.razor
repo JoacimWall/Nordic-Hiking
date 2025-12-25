@@ -3,14 +3,14 @@
 @inject HikeDataService HikeDataService
 @inject IJSRuntime JS
 
-<PageTitle>Vandringskarta</PageTitle>
+<PageTitle>Vandringar i norden</PageTitle>
 
 <div class="container-fluid p-0">
     <div class="row g-0">
         <div class="col-12">
             <div class="p-3 bg-light">
-                <h1>Vandringskarta</h1>
-                <p>Utforska vandringsleder från YouTube-kanaler</p>
+                <h1 class="text-center">🥾 Vandringar i norden 🎒</h1>
+                <p class="text-center">Utforska vandringsleder från YouTube-kanaler</p>
 
                 @if (isLoading)
                 {
@@ -26,15 +26,14 @@
                 }
                 else
                 {
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <span class="text-success">@filteredLocations.Count av @locations.Count platser visas</span>
-                    </div>
-                    
                     @if (channels.Count > 0)
                     {
                         <div class="card mb-3">
                             <div class="card-header d-flex justify-content-between align-items-center py-2">
-                                <strong>🎬 Filtrera kanaler</strong>
+                                <div>
+                                    <strong>🎬 Filtrera kanaler</strong>
+                                    <span class="text-success ms-3">(@filteredLocations.Count av @locations.Count platser visas)</span>
+                                </div>
                                 <div>
                                     <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllChannels">Välj alla</button>
                                     <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllChannels">Avmarkera alla</button>
@@ -110,6 +109,19 @@
         return html;
     }
 
+    private string FormatDate(string? dateString)
+    {
+        if (string.IsNullOrEmpty(dateString))
+            return "";
+        
+        if (DateTime.TryParse(dateString, out var date))
+        {
+            return date.ToString("yyyy-MM-dd");
+        }
+        
+        return dateString;
+    }
+
     private async Task LoadData()
     {
         try
@@ -161,7 +173,7 @@
             
             var popupHtml = $@"
                 <div style='min-width: 280px; max-width: 350px; max-height: 450px; overflow-y: auto;'>
-                    <h5 style='margin-bottom: 8px;'>{location.PlaceName}</h5>
+                    <h5 style='margin-bottom: 8px;'>{location.PlaceName} <span style='font-size: 0.7em; font-weight: normal; color: #333;'>({FormatDate(location.PublishedAt)})</span></h5>
                     <p style='margin-bottom: 8px;'><strong>{location.Region}, {location.Country}</strong></p>
                     <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 320px; border-radius: 4px;' /><br/>
                     <div style='margin: 10px 0;'>
