@@ -56,13 +56,14 @@ else
         <div class="col-md-4">
             <img src="@video.ThumbnailUrl" alt="Thumbnail" class="img-fluid mb-3" />
             
-            @if (locations.Any())
-            {
-                <div class="mb-3">
-                    <label class="form-label"><strong>Platser på karta:</strong></label>
-                    <div id="locationMap" style="height: 500px; width: 100%; border-radius: 8px; border: 1px solid #ddd;"></div>
-                </div>
-            }
+            <div class="mb-3">
+                <label class="form-label"><strong>Platser på karta:</strong></label>
+                <div id="locationMap" style="height: 500px; width: 100%; border-radius: 8px; border: 1px solid #ddd; @(locations.Any(l => l.Latitude != 0 && l.Longitude != 0) ? "" : "display: none;")"></div>
+                @if (!locations.Any(l => l.Latitude != 0 && l.Longitude != 0))
+                {
+                    <p class="text-muted">Inga platser med koordinater att visa.</p>
+                }
+            </div>
         </div>
         <div class="col-md-8">
             <h3>@video.Title</h3>
@@ -221,17 +222,29 @@ else
         var validLocations = locations.Where(l => l.Latitude != 0 && l.Longitude != 0).ToList();
         if (!validLocations.Any()) return;
 
+        // Vänta på att DOM ska uppdateras
+        await Task.Delay(100);
+        StateHasChanged();
+        await Task.Delay(100);
+
         var centerLat = validLocations.Average(l => l.Latitude);
         var centerLng = validLocations.Average(l => l.Longitude);
 
-        await JS.InvokeVoidAsync("editVideoMap.initializeMap", "locationMap", centerLat, centerLng, 6);
-
-        foreach (var location in validLocations)
+        try
         {
-            await JS.InvokeVoidAsync("editVideoMap.addMarker", location.Latitude, location.Longitude, location.PlaceName);
-        }
+            await JS.InvokeVoidAsync("editVideoMap.initializeMap", "locationMap", centerLat, centerLng, 6);
 
-        await JS.InvokeVoidAsync("editVideoMap.fitBounds");
+            foreach (var location in validLocations)
+            {
+                await JS.InvokeVoidAsync("editVideoMap.addMarker", location.Latitude, location.Longitude, location.PlaceName);
+            }
+
+            await JS.InvokeVoidAsync("editVideoMap.fitBounds");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Kunde inte initiera kartan: {ex.Message}");
+        }
     }
 
     private async Task LoadVideo()

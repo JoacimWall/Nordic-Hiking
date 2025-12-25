@@ -3,6 +3,15 @@ window.editVideoMap = {
     markers: [],
 
     initializeMap: function (mapId, centerLat, centerLng, zoom) {
+        const container = document.getElementById(mapId);
+        if (!container) {
+            console.error('Map container not found:', mapId);
+            return false;
+        }
+
+        // Visa containern om den är dold
+        container.style.display = 'block';
+
         if (this.map) {
             this.map.remove();
         }
