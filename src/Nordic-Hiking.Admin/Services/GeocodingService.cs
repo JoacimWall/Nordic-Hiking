@@ -60,45 +60,45 @@ public class GeocodingService : IGeocodingService
                 ? $"{placeName}, {country}"
                 : $"{placeName}, {region}, {country}";
 
-            var url = $"maps/api/geocode/json?address={Uri.EscapeDataString(query)}&key={_googleApiKey}";
-            var response = await _googleClient.GetAsync(url);
+            var requestBody = new
+            {
+                textQuery = query
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "v1/places:searchText")
+            {
+                Content = JsonContent.Create(requestBody)
+            };
+            request.Headers.Add("X-Goog-Api-Key", _googleApiKey);
+            request.Headers.Add("X-Goog-FieldMask", "places.location");
+
+            var response = await _googleClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Google Places API error: {response.StatusCode} - {errorContent}");
                 return null;
+            }
 
             var options = new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             };
-            var result = await response.Content.ReadFromJsonAsync<GoogleGeocodingResponse>(options);
+            var result = await response.Content.ReadFromJsonAsync<PlacesTextSearchResponse>(options);
 
-            if (result == null)
+            if (result?.Places == null || result.Places.Count == 0)
                 return null;
 
-            // Hantera fel från Google API
-            if (result.Status == "REQUEST_DENIED")
-            {
-                Console.WriteLine($"Google Geocoding API: REQUEST_DENIED - {result.ErrorMessage}");
-                Console.WriteLine("Se till att Geocoding API är aktiverat i Google Cloud Console: https://console.cloud.google.com/apis/library/geocoding-backend.googleapis.com");
-                return null;
-            }
-
-            if (result.Status != "OK" || result.Results == null || result.Results.Count == 0)
-            {
-                if (!string.IsNullOrEmpty(result.ErrorMessage))
-                    Console.WriteLine($"Google Geocoding API error: {result.Status} - {result.ErrorMessage}");
-                return null;
-            }
-
-            var location = result.Results[0].Geometry?.Location;
+            var location = result.Places[0].Location;
             if (location == null)
                 return null;
 
-            return (location.Lat, location.Lng);
+            return (location.Latitude, location.Longitude);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Google Geocoding exception: {ex.Message}");
+            Console.WriteLine($"Google Places API exception: {ex.Message}");
             return null;
         }
     }
@@ -146,27 +146,19 @@ public class GeocodingService : IGeocodingService
         public string Lon { get; set; } = string.Empty;
     }
 
-    private class GoogleGeocodingResponse
+    private class PlacesTextSearchResponse
     {
-        public string Status { get; set; } = string.Empty;
-        public List<GoogleGeocodingResult>? Results { get; set; }
-        [JsonPropertyName("error_message")]
-        public string? ErrorMessage { get; set; }
+        public List<PlaceResult>? Places { get; set; }
     }
 
-    private class GoogleGeocodingResult
+    private class PlaceResult
     {
-        public GoogleGeometry? Geometry { get; set; }
+        public PlaceLocation? Location { get; set; }
     }
 
-    private class GoogleGeometry
+    private class PlaceLocation
     {
-        public GoogleLocation? Location { get; set; }
-    }
-
-    private class GoogleLocation
-    {
-        public double Lat { get; set; }
-        public double Lng { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 }
