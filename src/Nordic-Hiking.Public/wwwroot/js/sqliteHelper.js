@@ -48,6 +48,7 @@ window.sqliteHelper = {
                     'https://www.youtube.com/watch?v=' || v.YoutubeVideoId as VideoUrl,
                     v.ThumbnailUrl as VideoThumbnail,
                     v.PublishedAt,
+                    v.VideoTalkSummary,
                     c.Name as ChannelName
                 FROM HikeLocations l
                 INNER JOIN Videos v ON l.VideoId = v.Id

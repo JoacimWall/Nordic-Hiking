@@ -73,4 +73,5 @@ public class HikeLocationDto
     public string VideoThumbnail { get; set; } = string.Empty;
     public string ChannelName { get; set; } = string.Empty;
     public string PublishedAt { get; set; } = string.Empty;
+    public string? VideoTalkSummary { get; set; }
 }

@@ -8,6 +8,7 @@ public class Video
     public string Description { get; set; } = string.Empty;
     public string ThumbnailUrl { get; set; } = string.Empty;
     public string? Transcript { get; set; }
+    public string? VideoTalkSummary { get; set; }
     public DateTime PublishedAt { get; set; }
     public bool IsProcessed { get; set; }
     public bool ShowOnMap { get; set; }

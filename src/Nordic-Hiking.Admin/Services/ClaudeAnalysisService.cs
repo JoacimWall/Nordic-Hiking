@@ -25,7 +25,7 @@ Beskrivning: {description}
 Transkript: {transcript ?? "Ej tillgängligt"}
 
 Extrahera följande information som JSON:
-- places: Lista med platser som nämns (namn, region, land)
+- places: Lista med platser som nämns (namn, region, land). Första platsen försöker du hämta från titeln och beskrivningen. Om inga platser nämns, lämna listan tom.
 - summary: Kort sammanfattning av vandringen (max 100 ord)
 - difficulty: Uppskattad svårighetsgrad (lätt/medel/svår)
 - duration: Om vandringens längd nämns (annars null)
@@ -73,5 +73,36 @@ Svara ENDAST med JSON, ingen annan text.";
         });
 
         return result ?? new HikeAnalysisResult();
+    }
+
+    public async Task<string> SummarizeTranscriptAsync(string transcript)
+    {
+        var prompt = $@"Sammanfatta vad personerna pratar om i följande transkript från en vandringsvideo. 
+Fokusera på:
+- Vad de diskuterar under vandringen
+- Intressanta observationer och kommentarer
+- Tips och råd som nämns
+- Stämningen och upplevelsen
+
+Transkript:
+{transcript}
+
+Skriv en sammanfattning på svenska, max 300 ord. Var konkret och informativ.";
+
+        var messages = new List<Message>
+        {
+            new Message(RoleType.User, prompt)
+        };
+
+        var parameters = new MessageParameters
+        {
+            Messages = messages,
+            Model = "claude-sonnet-4-20250514",
+            MaxTokens = 1000,
+            Temperature = 0.5m
+        };
+
+        var response = await _client.Messages.GetClaudeMessageAsync(parameters);
+        return response.Content.OfType<TextContent>().First().Text.Trim();
     }
 }

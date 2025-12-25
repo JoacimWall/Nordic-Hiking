@@ -175,16 +175,24 @@ else
             statusMessage = "Hämtar transkript...";
             video.Transcript = await YouTubeService.GetVideoTranscriptAsync(video.YoutubeVideoId);
 
+            // Sammanfatta transkriptet
+            if (!string.IsNullOrEmpty(video.Transcript))
+            {
+                statusMessage = "Sammanfattar transkript...";
+                video.VideoTalkSummary = await AiService.SummarizeTranscriptAsync(video.Transcript);
+            }
+
             // AI-analys
             statusMessage = "Analyserar med AI...";
             var analysis = await AiService.AnalyzeVideoAsync(video.Title, video.Description, video.Transcript);
 
             // Geokodning
             statusMessage = "Hämtar koordinater...";
-            foreach (var place in analysis.Places)
+            //var firstPlace = analysis.Places.OrderBy(x => x.Name);
+            foreach (var place in analysis.Places.OrderBy(x => x.Name))
             {
                 var coords = await GeocodingService.GetCoordinatesAsync(place.Name, place.Region, place.Country);
-
+            
                 if (coords.HasValue)
                 {
                     var location = new HikeLocation
@@ -200,8 +208,9 @@ else
                         Confidence = analysis.Confidence,
                         VideoId = videoId
                     };
-
+            
                     DbContext.HikeLocations.Add(location);
+                    break;
                 }
             }
 

@@ -5,6 +5,7 @@ namespace NordicHiking.Core.Interfaces;
 public interface IAiAnalysisService
 {
     Task<HikeAnalysisResult> AnalyzeVideoAsync(string title, string description, string? transcript);
+    Task<string> SummarizeTranscriptAsync(string transcript);
 }
 
 public class HikeAnalysisResult

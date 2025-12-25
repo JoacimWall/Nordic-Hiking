@@ -72,7 +72,7 @@
                 foreach (var location in locations)
                 {
                     var popupHtml = $@"
-                        <div style='min-width: 250px;'>
+                        <div style='min-width: 250px; max-height: 400px; overflow-y: auto;'>
                             <h5>{location.PlaceName}</h5>
                             <p><strong>{location.Region}, {location.Country}</strong></p>
                             <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 300px;' /><br/>
@@ -81,7 +81,8 @@
                             <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
                             {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
                             <p>{location.Summary}</p>
-                            <a href='{location.VideoUrl}' target='_blank' class='btn btn-sm btn-primary'>Se video på YouTube</a>
+                            {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $"<details style='margin-bottom: 15px;'><summary><strong>Vad de pratar om</strong></summary><p style='font-size: 0.9em;'>{location.VideoTalkSummary}</p></details>")}
+                            <a href='{location.VideoUrl}' target='_blank' class='youtube-btn' style='margin-top: 10px;'>Se video på YouTube</a>
                         </div>
                     ";
 

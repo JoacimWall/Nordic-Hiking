@@ -68,6 +68,14 @@ else
                     <textarea class="form-control" rows="6" readonly>@video.Transcript</textarea>
                 </div>
             }
+
+            @if (!string.IsNullOrEmpty(video.VideoTalkSummary))
+            {
+                <div class="mb-3">
+                    <label class="form-label"><strong>Sammanfattning av vad de pratar om:</strong></label>
+                    <textarea class="form-control" rows="6" readonly>@video.VideoTalkSummary</textarea>
+                </div>
+            }
         </div>
     </div>
 
