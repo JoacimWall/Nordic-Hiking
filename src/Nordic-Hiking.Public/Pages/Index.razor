@@ -26,9 +26,37 @@
                 }
                 else
                 {
-                    <div class="alert alert-success">
-                        @locations.Count platser laddade
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-success">@filteredLocations.Count av @locations.Count platser visas</span>
                     </div>
+                    
+                    @if (channels.Count > 0)
+                    {
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                                <strong>🎬 Filtrera kanaler</strong>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllChannels">Välj alla</button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllChannels">Avmarkera alla</button>
+                                </div>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="d-flex flex-wrap gap-3">
+                                    @foreach (var channel in channels)
+                                    {
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="channel-@channel.Id" 
+                                                   checked="@selectedChannelIds.Contains(channel.Id)"
+                                                   @onchange="@(e => ToggleChannel(channel.Id, (bool)(e.Value ?? false)))" />
+                                            <label class="form-check-label" for="channel-@channel.Id">
+                                                @channel.Name
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
                 }
             </div>
         </div>
@@ -43,7 +71,11 @@
 
 @code {
     private List<HikeLocationDto> locations = new();
+    private List<HikeLocationDto> filteredLocations = new();
+    private List<ChannelDto> channels = new();
+    private HashSet<int> selectedChannelIds = new();
     private bool isLoading = true;
+    private bool mapInitialized = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -83,6 +115,10 @@
         try
         {
             locations = await HikeDataService.GetAllLocationsAsync();
+            channels = await HikeDataService.GetAllChannelsAsync();
+            
+            // Välj alla kanaler som standard
+            selectedChannelIds = new HashSet<int>(channels.Select(c => c.Id));
 
             if (locations.Count > 0)
             {
@@ -92,38 +128,9 @@
                 var centerLng = firstLocation?.Longitude ?? 15.0;
 
                 await JS.InvokeVoidAsync("mapHelper.initializeMap", "map", centerLat, centerLng, 5);
+                mapInitialized = true;
 
-                // Lägg till alla markers
-                foreach (var location in locations)
-                {
-                    var formattedSummary = ConvertMarkdownToHtml(location.VideoTalkSummary);
-                    
-                    var popupHtml = $@"
-                        <div style='min-width: 280px; max-width: 350px; max-height: 450px; overflow-y: auto;'>
-                            <h5 style='margin-bottom: 8px;'>{location.PlaceName}</h5>
-                            <p style='margin-bottom: 8px;'><strong>{location.Region}, {location.Country}</strong></p>
-                            <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 320px; border-radius: 4px;' /><br/>
-                            <div style='margin: 10px 0;'>
-                                <strong>Video:</strong> {location.VideoTitle}<br/>
-                                <strong>Kanal:</strong> {location.ChannelName}<br/>
-                                <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
-                                {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
-                            </div>
-                            <p style='margin: 10px 0; font-size: 0.95em;'>{location.Summary}</p>
-                            {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $@"
-                            <details style='margin: 15px 0; background: #f8f9fa; border-radius: 6px; padding: 10px;'>
-                                <summary style='cursor: pointer; font-weight: bold; color: #0d6efd;'>📖 Vad de pratar om i videon</summary>
-                                <div style='margin-top: 10px; font-size: 0.9em; color: #333;'>{formattedSummary}</div>
-                            </details>")}
-                            <a href='{location.VideoUrl}' target='_blank' class='youtube-btn' style='margin-top: 10px;'>Se video på YouTube</a>
-                        </div>
-                    ";
-
-                    await JS.InvokeVoidAsync("mapHelper.addMarker", location.Latitude, location.Longitude, popupHtml);
-                }
-
-                // Anpassa kartan så alla markers syns
-                await JS.InvokeVoidAsync("mapHelper.fitBounds");
+                await UpdateMapMarkers();
             }
         }
         catch (Exception ex)
@@ -135,5 +142,80 @@
             isLoading = false;
             StateHasChanged();
         }
+    }
+
+    private async Task UpdateMapMarkers()
+    {
+        if (!mapInitialized) return;
+
+        // Rensa befintliga markers
+        await JS.InvokeVoidAsync("mapHelper.clearMarkers");
+
+        // Filtrera platser baserat på valda kanaler
+        filteredLocations = locations.Where(l => selectedChannelIds.Contains(l.ChannelId)).ToList();
+
+        // Lägg till markers för filtrerade platser
+        foreach (var location in filteredLocations)
+        {
+            var formattedSummary = ConvertMarkdownToHtml(location.VideoTalkSummary);
+            
+            var popupHtml = $@"
+                <div style='min-width: 280px; max-width: 350px; max-height: 450px; overflow-y: auto;'>
+                    <h5 style='margin-bottom: 8px;'>{location.PlaceName}</h5>
+                    <p style='margin-bottom: 8px;'><strong>{location.Region}, {location.Country}</strong></p>
+                    <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 320px; border-radius: 4px;' /><br/>
+                    <div style='margin: 10px 0;'>
+                        <strong>Video:</strong> {location.VideoTitle}<br/>
+                        <strong>Kanal:</strong> {location.ChannelName}<br/>
+                        <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
+                        {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
+                    </div>
+                    <p style='margin: 10px 0; font-size: 0.95em;'>{location.Summary}</p>
+                    {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $@"
+                    <details style='margin: 15px 0; background: #f8f9fa; border-radius: 6px; padding: 10px;'>
+                        <summary style='cursor: pointer; font-weight: bold; color: #0d6efd;'>📖 Vad de pratar om i videon</summary>
+                        <div style='margin-top: 10px; font-size: 0.9em; color: #333;'>{formattedSummary}</div>
+                    </details>")}
+                    <a href='{location.VideoUrl}' target='_blank' class='youtube-btn' style='margin-top: 10px;'>Se video på YouTube</a>
+                </div>
+            ";
+
+            await JS.InvokeVoidAsync("mapHelper.addMarker", location.Latitude, location.Longitude, popupHtml);
+        }
+
+        // Anpassa kartan så alla markers syns
+        if (filteredLocations.Count > 0)
+        {
+            await JS.InvokeVoidAsync("mapHelper.fitBounds");
+        }
+    }
+
+    private async Task ToggleChannel(int channelId, bool isSelected)
+    {
+        if (isSelected)
+        {
+            selectedChannelIds.Add(channelId);
+        }
+        else
+        {
+            selectedChannelIds.Remove(channelId);
+        }
+        
+        await UpdateMapMarkers();
+        StateHasChanged();
+    }
+
+    private async Task SelectAllChannels()
+    {
+        selectedChannelIds = new HashSet<int>(channels.Select(c => c.Id));
+        await UpdateMapMarkers();
+        StateHasChanged();
+    }
+
+    private async Task DeselectAllChannels()
+    {
+        selectedChannelIds.Clear();
+        await UpdateMapMarkers();
+        StateHasChanged();
     }
 }

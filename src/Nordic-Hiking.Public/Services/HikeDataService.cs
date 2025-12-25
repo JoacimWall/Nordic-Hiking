@@ -7,11 +7,25 @@ public class HikeDataService
 {
     private readonly IJSRuntime _jsRuntime;
     private List<HikeLocationDto>? _cachedLocations;
+    private List<ChannelDto>? _cachedChannels;
     private bool _isInitialized = false;
 
     public HikeDataService(IJSRuntime jsRuntime)
     {
         _jsRuntime = jsRuntime;
+    }
+
+    private async Task EnsureInitializedAsync()
+    {
+        if (!_isInitialized)
+        {
+            var initialized = await _jsRuntime.InvokeAsync<bool>("sqliteHelper.initialize", "data/hikes.db");
+            if (!initialized)
+            {
+                throw new Exception("Failed to initialize database");
+            }
+            _isInitialized = true;
+        }
     }
 
     public async Task<List<HikeLocationDto>> GetAllLocationsAsync()
@@ -23,17 +37,7 @@ public class HikeDataService
 
         try
         {
-            // Initialize the database if not already done
-            if (!_isInitialized)
-            {
-                var initialized = await _jsRuntime.InvokeAsync<bool>("sqliteHelper.initialize", "data/hikes.db");
-                if (!initialized)
-                {
-                    Console.WriteLine("Failed to initialize database");
-                    return locations;
-                }
-                _isInitialized = true;
-            }
+            await EnsureInitializedAsync();
 
             // Query locations from database
             var result = await _jsRuntime.InvokeAsync<JsonElement>("sqliteHelper.queryLocations");
@@ -54,6 +58,37 @@ public class HikeDataService
 
         return _cachedLocations ?? new List<HikeLocationDto>();
     }
+
+    public async Task<List<ChannelDto>> GetAllChannelsAsync()
+    {
+        if (_cachedChannels != null)
+            return _cachedChannels;
+
+        var channels = new List<ChannelDto>();
+
+        try
+        {
+            await EnsureInitializedAsync();
+
+            // Query channels from database
+            var result = await _jsRuntime.InvokeAsync<JsonElement>("sqliteHelper.queryChannels");
+
+            // Deserialize the JSON result
+            if (result.ValueKind == JsonValueKind.Array)
+            {
+                channels = JsonSerializer.Deserialize<List<ChannelDto>>(result.GetRawText()) ?? new List<ChannelDto>();
+            }
+
+            _cachedChannels = channels;
+            Console.WriteLine($"Loaded {channels.Count} channels from database");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading channel data: {ex.Message}");
+        }
+
+        return _cachedChannels ?? new List<ChannelDto>();
+    }
 }
 
 public class HikeLocationDto
@@ -71,7 +106,15 @@ public class HikeLocationDto
     public string VideoTitle { get; set; } = string.Empty;
     public string VideoUrl { get; set; } = string.Empty;
     public string VideoThumbnail { get; set; } = string.Empty;
+    public int ChannelId { get; set; }
     public string ChannelName { get; set; } = string.Empty;
     public string PublishedAt { get; set; } = string.Empty;
     public string? VideoTalkSummary { get; set; }
 }
+
+public class ChannelDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+

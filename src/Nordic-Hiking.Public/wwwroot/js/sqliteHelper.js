@@ -49,6 +49,7 @@ window.sqliteHelper = {
                     v.ThumbnailUrl as VideoThumbnail,
                     v.PublishedAt,
                     v.VideoTalkSummary,
+                    c.Id as ChannelId,
                     c.Name as ChannelName
                 FROM HikeLocations l
                 INNER JOIN Videos v ON l.VideoId = v.Id
@@ -78,6 +79,49 @@ window.sqliteHelper = {
             return locations;
         } catch (error) {
             console.error('Error querying database:', error);
+            return [];
+        }
+    },
+
+    async queryChannels() {
+        if (!this.db) {
+            console.error('Database not initialized');
+            return [];
+        }
+
+        try {
+            const query = `
+                SELECT DISTINCT
+                    c.Id,
+                    c.Name
+                FROM Channels c
+                INNER JOIN Videos v ON v.ChannelId = c.Id
+                INNER JOIN HikeLocations l ON l.VideoId = v.Id
+                WHERE v.ShowOnMap = 1
+                ORDER BY c.Name
+            `;
+
+            const result = this.db.exec(query);
+
+            if (result.length === 0) {
+                return [];
+            }
+
+            const columns = result[0].columns;
+            const values = result[0].values;
+
+            const channels = values.map(row => {
+                const obj = {};
+                columns.forEach((col, index) => {
+                    obj[col] = row[index];
+                });
+                return obj;
+            });
+
+            console.log(`Loaded ${channels.length} channels from database`);
+            return channels;
+        } catch (error) {
+            console.error('Error querying channels:', error);
             return [];
         }
     },
