@@ -53,6 +53,31 @@
         }
     }
 
+    private string ConvertMarkdownToHtml(string? markdown)
+    {
+        if (string.IsNullOrEmpty(markdown))
+            return string.Empty;
+
+        var html = markdown;
+        
+        // Konvertera rubriker (## -> h4, # -> h3)
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h5 style='margin-top: 10px; margin-bottom: 5px; color: #333;'>$1</h5>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h4 style='margin-top: 12px; margin-bottom: 6px; color: #222;'>$1</h4>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h3 style='margin-top: 15px; margin-bottom: 8px; color: #111;'>$1</h3>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        
+        // Konvertera bold (**text**)
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
+        
+        // Konvertera radbrytningar till <br/> för paragrafer
+        html = html.Replace("\n\n", "</p><p style='margin: 8px 0; line-height: 1.5;'>");
+        html = html.Replace("\n", "<br/>");
+        
+        // Wrappa i en paragraf
+        html = $"<p style='margin: 8px 0; line-height: 1.5;'>{html}</p>";
+        
+        return html;
+    }
+
     private async Task LoadData()
     {
         try
@@ -71,17 +96,25 @@
                 // Lägg till alla markers
                 foreach (var location in locations)
                 {
+                    var formattedSummary = ConvertMarkdownToHtml(location.VideoTalkSummary);
+                    
                     var popupHtml = $@"
-                        <div style='min-width: 250px; max-height: 400px; overflow-y: auto;'>
-                            <h5>{location.PlaceName}</h5>
-                            <p><strong>{location.Region}, {location.Country}</strong></p>
-                            <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 300px;' /><br/>
-                            <strong>Video:</strong> {location.VideoTitle}<br/>
-                            <strong>Kanal:</strong> {location.ChannelName}<br/>
-                            <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
-                            {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
-                            <p>{location.Summary}</p>
-                            {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $"<details style='margin-bottom: 15px;'><summary><strong>Vad de pratar om</strong></summary><p style='font-size: 0.9em;'>{location.VideoTalkSummary}</p></details>")}
+                        <div style='min-width: 280px; max-width: 350px; max-height: 450px; overflow-y: auto;'>
+                            <h5 style='margin-bottom: 8px;'>{location.PlaceName}</h5>
+                            <p style='margin-bottom: 8px;'><strong>{location.Region}, {location.Country}</strong></p>
+                            <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 320px; border-radius: 4px;' /><br/>
+                            <div style='margin: 10px 0;'>
+                                <strong>Video:</strong> {location.VideoTitle}<br/>
+                                <strong>Kanal:</strong> {location.ChannelName}<br/>
+                                <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
+                                {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
+                            </div>
+                            <p style='margin: 10px 0; font-size: 0.95em;'>{location.Summary}</p>
+                            {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $@"
+                            <details style='margin: 15px 0; background: #f8f9fa; border-radius: 6px; padding: 10px;'>
+                                <summary style='cursor: pointer; font-weight: bold; color: #0d6efd;'>📖 Vad de pratar om i videon</summary>
+                                <div style='margin-top: 10px; font-size: 0.9em; color: #333;'>{formattedSummary}</div>
+                            </details>")}
                             <a href='{location.VideoUrl}' target='_blank' class='youtube-btn' style='margin-top: 10px;'>Se video på YouTube</a>
                         </div>
                     ";

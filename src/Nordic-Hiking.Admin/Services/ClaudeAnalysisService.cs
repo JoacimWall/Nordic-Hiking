@@ -87,7 +87,7 @@ Fokusera på:
 Transkript:
 {transcript}
 
-Skriv en sammanfattning på svenska, max 300 ord. Var konkret och informativ.";
+Skriv en sammanfattning på svenska, max 300 ord. Var konkret och informativ. se till att dela upp de olika punkterna i separata stycken. med rubrik för varje stycken.";
 
         var messages = new List<Message>
         {
