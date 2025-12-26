@@ -132,10 +132,10 @@
 
         var html = markdown;
         
-        // Konvertera rubriker (## -> h4, # -> h3)
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h5 style='margin-top: 10px; margin-bottom: 5px; color: #333;'>$1</h5>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h4 style='margin-top: 12px; margin-bottom: 6px; color: #222;'>$1</h4>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h3 style='margin-top: 15px; margin-bottom: 8px; color: #111;'>$1</h3>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        // Konvertera rubriker (mindre storlekar för popup)
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h6 style='margin-top: 8px; margin-bottom: 4px; font-size: 0.85em; color: #333;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h6 style='margin-top: 10px; margin-bottom: 5px; font-size: 0.9em; color: #222;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h6 style='margin-top: 12px; margin-bottom: 6px; font-size: 0.95em; color: #111;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
         
         // Konvertera bold (**text**)
         html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
