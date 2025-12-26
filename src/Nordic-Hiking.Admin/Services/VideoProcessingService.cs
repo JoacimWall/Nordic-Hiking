@@ -72,15 +72,15 @@ public class VideoProcessingService
             {
                 var location = new HikeLocation
                 {
-                    PlaceName = place.Name,
-                    Region = place.Region,
-                    Country = place.Country,
+                    PlaceName = place.Name ?? string.Empty,
+                    Region = place.Region ?? string.Empty,
+                    Country = place.Country ?? string.Empty,
                     Latitude = coords.Value.Latitude,
                     Longitude = coords.Value.Longitude,
-                    Summary = analysis.Summary,
-                    Difficulty = analysis.Difficulty,
+                    Summary = analysis.Summary ?? string.Empty,
+                    Difficulty = analysis.Difficulty ?? string.Empty,
                     Duration = analysis.Duration,
-                    Confidence = analysis.Confidence,
+                    Confidence = analysis.Confidence ?? string.Empty,
                     VideoId = trackedVideo.Id
                 };
            
