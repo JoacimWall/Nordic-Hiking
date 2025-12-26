@@ -22,6 +22,9 @@ jobs:
     - name: Publish
       run: dotnet publish src/Nordic-Hiking.Public/Nordic-Hiking.Public.csproj -c Release -o publish
     
+    - name: Add .nojekyll
+      run: touch publish/wwwroot/.nojekyll
+    
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
