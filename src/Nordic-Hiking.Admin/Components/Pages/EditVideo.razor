@@ -81,6 +81,16 @@ else
             </div>
 
             <div class="mb-3">
+                <label class="form-label"><strong>Säsong:</strong></label>
+                <select class="form-select" @bind="video.Season">
+                    <option value="@NordicHiking.Core.Models.Season.Vår">🌸 Vår</option>
+                    <option value="@NordicHiking.Core.Models.Season.Sommar">☀️ Sommar</option>
+                    <option value="@NordicHiking.Core.Models.Season.Höst">🍂 Höst</option>
+                    <option value="@NordicHiking.Core.Models.Season.Vinter">❄️ Vinter</option>
+                </select>
+            </div>
+
+            <div class="mb-3">
                 <label class="form-label"><strong>Beskrivning:</strong></label>
                 <textarea class="form-control" rows="4" readonly>@video.Description</textarea>
             </div>

@@ -110,6 +110,7 @@ public class HikeLocationDto
     public string ChannelName { get; set; } = string.Empty;
     public string PublishedAt { get; set; } = string.Empty;
     public string? VideoTalkSummary { get; set; }
+    public int Season { get; set; }
 }
 
 public class ChannelDto

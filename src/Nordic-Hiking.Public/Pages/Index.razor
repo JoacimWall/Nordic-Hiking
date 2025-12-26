@@ -55,6 +55,46 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                                <div>
+                                    <strong>🌤️ Filtrera säsong</strong>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllSeasons">Välj alla</button>
+                                    <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllSeasons">Avmarkera alla</button>
+                                </div>
+                            </div>
+                            <div class="card-body py-2">
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="season-0" 
+                                               checked="@selectedSeasons.Contains(0)"
+                                               @onchange="@(e => ToggleSeason(0, (bool)(e.Value ?? false)))" />
+                                        <label class="form-check-label" for="season-0">🌸 Vår</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="season-1" 
+                                               checked="@selectedSeasons.Contains(1)"
+                                               @onchange="@(e => ToggleSeason(1, (bool)(e.Value ?? false)))" />
+                                        <label class="form-check-label" for="season-1">☀️ Sommar</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="season-2" 
+                                               checked="@selectedSeasons.Contains(2)"
+                                               @onchange="@(e => ToggleSeason(2, (bool)(e.Value ?? false)))" />
+                                        <label class="form-check-label" for="season-2">🍂 Höst</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="season-3" 
+                                               checked="@selectedSeasons.Contains(3)"
+                                               @onchange="@(e => ToggleSeason(3, (bool)(e.Value ?? false)))" />
+                                        <label class="form-check-label" for="season-3">❄️ Vinter</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     }
                 }
             </div>
@@ -73,6 +113,7 @@
     private List<HikeLocationDto> filteredLocations = new();
     private List<ChannelDto> channels = new();
     private HashSet<int> selectedChannelIds = new();
+    private HashSet<int> selectedSeasons = new() { 0, 1, 2, 3 }; // Alla säsonger valda som standard
     private bool isLoading = true;
     private bool mapInitialized = false;
 
@@ -163,8 +204,10 @@
         // Rensa befintliga markers
         await JS.InvokeVoidAsync("mapHelper.clearMarkers");
 
-        // Filtrera platser baserat på valda kanaler
-        filteredLocations = locations.Where(l => selectedChannelIds.Contains(l.ChannelId)).ToList();
+        // Filtrera platser baserat på valda kanaler och säsonger
+        filteredLocations = locations
+            .Where(l => selectedChannelIds.Contains(l.ChannelId) && selectedSeasons.Contains(l.Season))
+            .ToList();
 
         // Lägg till markers för filtrerade platser
         foreach (var location in filteredLocations)
@@ -227,6 +270,35 @@
     private async Task DeselectAllChannels()
     {
         selectedChannelIds.Clear();
+        await UpdateMapMarkers();
+        StateHasChanged();
+    }
+
+    private async Task ToggleSeason(int season, bool isSelected)
+    {
+        if (isSelected)
+        {
+            selectedSeasons.Add(season);
+        }
+        else
+        {
+            selectedSeasons.Remove(season);
+        }
+        
+        await UpdateMapMarkers();
+        StateHasChanged();
+    }
+
+    private async Task SelectAllSeasons()
+    {
+        selectedSeasons = new HashSet<int> { 0, 1, 2, 3 };
+        await UpdateMapMarkers();
+        StateHasChanged();
+    }
+
+    private async Task DeselectAllSeasons()
+    {
+        selectedSeasons.Clear();
         await UpdateMapMarkers();
         StateHasChanged();
     }

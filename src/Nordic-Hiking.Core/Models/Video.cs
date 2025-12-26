@@ -1,5 +1,13 @@
 namespace NordicHiking.Core.Models;
 
+public enum Season
+{
+    Vår = 0,
+    Sommar = 1,
+    Höst = 2,
+    Vinter = 3
+}
+
 public class Video
 {
     public int Id { get; set; }
@@ -12,6 +20,7 @@ public class Video
     public DateTime PublishedAt { get; set; }
     public bool IsProcessed { get; set; }
     public bool ShowOnMap { get; set; }
+    public Season Season { get; set; } = Season.Sommar;
     public int ChannelId { get; set; }
     public Channel? Channel { get; set; }
     public ICollection<HikeLocation> Locations { get; set; } = new List<HikeLocation>();

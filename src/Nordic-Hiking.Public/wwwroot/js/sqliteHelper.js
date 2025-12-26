@@ -49,6 +49,7 @@ window.sqliteHelper = {
                     v.ThumbnailUrl as VideoThumbnail,
                     v.PublishedAt,
                     v.VideoTalkSummary,
+                    v.Season,
                     c.Id as ChannelId,
                     c.Name as ChannelName
                 FROM HikeLocations l
