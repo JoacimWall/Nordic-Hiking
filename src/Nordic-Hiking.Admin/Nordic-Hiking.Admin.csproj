@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
     <ProjectReference Include="..\Nordic-Hiking.Data\Nordic-Hiking.Data.csproj" />
@@ -21,6 +21,7 @@
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <RootNamespace>NordicHiking.Admin</RootNamespace>
     <AssemblyName>Nordic-Hiking.Admin</AssemblyName>
+    <UserSecretsId>fff8eab3-736d-4535-b423-8ae59aab7821</UserSecretsId>
   </PropertyGroup>
 
 </Project>
