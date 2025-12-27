@@ -31,68 +31,72 @@
                         <div class="card mb-3">
                             <div class="card-header d-flex justify-content-between align-items-center py-2">
                                 <div>
-                                    <strong>🎬 Filtrera kanaler</strong>
+                                    <strong>🔍 Filter</strong>
                                     <span class="text-success ms-3">(@filteredLocations.Count av @locations.Count platser visas)</span>
                                 </div>
-                                <div>
-                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllChannels">Välj alla</button>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllChannels">Avmarkera alla</button>
-                                </div>
                             </div>
                             <div class="card-body py-2">
-                                <div class="d-flex flex-wrap gap-3">
-                                    @foreach (var channel in channels)
-                                    {
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" id="channel-@channel.Id" 
-                                                   checked="@selectedChannelIds.Contains(channel.Id)"
-                                                   @onchange="@(e => ToggleChannel(channel.Id, (bool)(e.Value ?? false)))" />
-                                            <label class="form-check-label" for="channel-@channel.Id">
-                                                @channel.Name
-                                            </label>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center py-2">
-                                <div>
-                                    <strong>🌤️ Filtrera säsong</strong>
-                                </div>
-                                <div>
-                                    <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllSeasons">Välj alla</button>
-                                    <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllSeasons">Avmarkera alla</button>
-                                </div>
-                            </div>
-                            <div class="card-body py-2">
-                                <div class="d-flex flex-wrap gap-3">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="season-0" 
-                                               checked="@selectedSeasons.Contains(0)"
-                                               @onchange="@(e => ToggleSeason(0, (bool)(e.Value ?? false)))" />
-                                        <label class="form-check-label" for="season-0">🌸 Vår</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="season-1" 
-                                               checked="@selectedSeasons.Contains(1)"
-                                               @onchange="@(e => ToggleSeason(1, (bool)(e.Value ?? false)))" />
-                                        <label class="form-check-label" for="season-1">☀️ Sommar</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="season-2" 
-                                               checked="@selectedSeasons.Contains(2)"
-                                               @onchange="@(e => ToggleSeason(2, (bool)(e.Value ?? false)))" />
-                                        <label class="form-check-label" for="season-2">🍂 Höst</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" id="season-3" 
-                                               checked="@selectedSeasons.Contains(3)"
-                                               @onchange="@(e => ToggleSeason(3, (bool)(e.Value ?? false)))" />
-                                        <label class="form-check-label" for="season-3">❄️ Vinter</label>
-                                    </div>
-                                </div>
+                                <table class="table table-borderless mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td style="width: 120px; vertical-align: top;"><strong>🎬 Kanaler</strong></td>
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-3">
+                                                    @foreach (var channel in channels)
+                                                    {
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="channel-@channel.Id" 
+                                                                   checked="@selectedChannelIds.Contains(channel.Id)"
+                                                                   @onchange="@(e => ToggleChannel(channel.Id, (bool)(e.Value ?? false)))" />
+                                                            <label class="form-check-label" for="channel-@channel.Id">
+                                                                @channel.Name
+                                                            </label>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td style="width: 180px; text-align: right; vertical-align: top;">
+                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllChannels">Välj alla</button>
+                                                <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllChannels">Avmarkera</button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="vertical-align: top;"><strong>🌤️ Säsong</strong></td>
+                                            <td>
+                                                <div class="d-flex flex-wrap gap-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="season-0" 
+                                                               checked="@selectedSeasons.Contains(0)"
+                                                               @onchange="@(e => ToggleSeason(0, (bool)(e.Value ?? false)))" />
+                                                        <label class="form-check-label" for="season-0">🌸 Vår</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="season-1" 
+                                                               checked="@selectedSeasons.Contains(1)"
+                                                               @onchange="@(e => ToggleSeason(1, (bool)(e.Value ?? false)))" />
+                                                        <label class="form-check-label" for="season-1">☀️ Sommar</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="season-2" 
+                                                               checked="@selectedSeasons.Contains(2)"
+                                                               @onchange="@(e => ToggleSeason(2, (bool)(e.Value ?? false)))" />
+                                                        <label class="form-check-label" for="season-2">🍂 Höst</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="season-3" 
+                                                               checked="@selectedSeasons.Contains(3)"
+                                                               @onchange="@(e => ToggleSeason(3, (bool)(e.Value ?? false)))" />
+                                                        <label class="form-check-label" for="season-3">❄️ Vinter</label>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style="text-align: right; vertical-align: top;">
+                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllSeasons">Välj alla</button>
+                                                <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllSeasons">Avmarkera</button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     }
