@@ -118,7 +118,8 @@ a:hover {
 }
 
 .card-panel {
-    width: 45%;
+    width: 380px;
+    min-width: 380px;
     overflow-y: auto;
     padding: 16px 20px;
     background: var(--airbnb-white);
@@ -499,6 +500,7 @@ a:hover {
 
     .card-panel {
         width: 100%;
+        min-width: unset;
         max-height: 40vh;
         min-height: 200px;
         border-bottom: 1px solid var(--airbnb-border);
