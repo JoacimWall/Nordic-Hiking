@@ -3,123 +3,95 @@
 @inject HikeDataService HikeDataService
 @inject IJSRuntime JS
 
-<PageTitle>Vandringar i norden</PageTitle>
+<PageTitle>Nordic Hiking — Vandringar i norden</PageTitle>
 
-<div class="container-fluid p-0">
-    <div class="row g-0">
-        <div class="col-12">
-            <div class="p-3 bg-light">
-                <h1 class="text-center">🥾 Vandringar i norden 🎒</h1>
-                <p class="text-center">Utforska vandringsleder från YouTube-kanaler</p>
+@if (isLoading)
+{
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <span>Laddar vandringar...</span>
+    </div>
+}
+else if (locations.Count == 0)
+{
+    <div class="empty-state">
+        <div class="empty-state-icon">🥾</div>
+        <strong>Inga platser hittades</strong>
+        <span>Kontrollera att hikes.db finns i wwwroot/data/</span>
+    </div>
+}
+else
+{
+    <!-- Filter pills -->
+    <div class="filter-bar">
+        <button class="filter-pill @(selectedSeasons.Count == 4 ? "active" : "")" @onclick="ToggleAllSeasons">
+            Alla
+        </button>
+        <button class="filter-pill @(IsSeasonActive(0) ? "active" : "")" @onclick="@(() => ToggleSeason(0))">
+            🌸 Vår
+        </button>
+        <button class="filter-pill @(IsSeasonActive(1) ? "active" : "")" @onclick="@(() => ToggleSeason(1))">
+            ☀️ Sommar
+        </button>
+        <button class="filter-pill @(IsSeasonActive(2) ? "active" : "")" @onclick="@(() => ToggleSeason(2))">
+            🍂 Höst
+        </button>
+        <button class="filter-pill @(IsSeasonActive(3) ? "active" : "")" @onclick="@(() => ToggleSeason(3))">
+            ❄️ Vinter
+        </button>
 
-                @if (isLoading)
-                {
-                    <div class="alert alert-info">
-                        <span class="spinner-border spinner-border-sm"></span> Laddar platser...
-                    </div>
-                }
-                else if (locations.Count == 0)
-                {
-                    <div class="alert alert-warning">
-                        Inga platser hittades. Kontrollera att hikes.db finns i wwwroot/data/.
-                    </div>
-                }
-                else
-                {
-                    @if (channels.Count > 0)
-                    {
-                        <div class="card mb-3">
-                            <div class="card-header d-flex justify-content-between align-items-center py-2">
-                                <div>
-                                    <strong>🔍 Filter</strong>
-                                    <span class="text-success ms-3">(@filteredLocations.Count av @locations.Count platser visas)</span>
-                                </div>
-                            </div>
-                            <div class="card-body py-2">
-                                <table class="table table-borderless mb-0">
-                                    <tbody>
-                                        <tr>
-                                            <td style="width: 120px; vertical-align: top;"><strong>🎬 Kanaler</strong></td>
-                                            <td>
-                                                <div class="d-flex flex-wrap gap-3">
-                                                    @foreach (var channel in channels)
-                                                    {
-                                                        <div class="form-check">
-                                                            <input class="form-check-input" type="checkbox" id="channel-@channel.Id" 
-                                                                   checked="@selectedChannelIds.Contains(channel.Id)"
-                                                                   @onchange="@(e => ToggleChannel(channel.Id, (bool)(e.Value ?? false)))" />
-                                                            <label class="form-check-label" for="channel-@channel.Id">
-                                                                @channel.Name
-                                                            </label>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            </td>
-                                            <td style="width: 180px; text-align: right; vertical-align: top;">
-                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllChannels">Välj alla</button>
-                                                <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllChannels">Avmarkera</button>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="vertical-align: top;"><strong>🌤️ Säsong</strong></td>
-                                            <td>
-                                                <div class="d-flex flex-wrap gap-3">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="season-0" 
-                                                               checked="@selectedSeasons.Contains(0)"
-                                                               @onchange="@(e => ToggleSeason(0, (bool)(e.Value ?? false)))" />
-                                                        <label class="form-check-label" for="season-0">🌸 Vår</label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="season-1" 
-                                                               checked="@selectedSeasons.Contains(1)"
-                                                               @onchange="@(e => ToggleSeason(1, (bool)(e.Value ?? false)))" />
-                                                        <label class="form-check-label" for="season-1">☀️ Sommar</label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="season-2" 
-                                                               checked="@selectedSeasons.Contains(2)"
-                                                               @onchange="@(e => ToggleSeason(2, (bool)(e.Value ?? false)))" />
-                                                        <label class="form-check-label" for="season-2">🍂 Höst</label>
-                                                    </div>
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="season-3" 
-                                                               checked="@selectedSeasons.Contains(3)"
-                                                               @onchange="@(e => ToggleSeason(3, (bool)(e.Value ?? false)))" />
-                                                        <label class="form-check-label" for="season-3">❄️ Vinter</label>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td style="text-align: right; vertical-align: top;">
-                                                <button class="btn btn-sm btn-outline-primary me-1" @onclick="SelectAllSeasons">Välj alla</button>
-                                                <button class="btn btn-sm btn-outline-secondary" @onclick="DeselectAllSeasons">Avmarkera</button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
+        @if (channels.Count > 1)
+        {
+            <div class="filter-divider"></div>
+            @foreach (var channel in channels)
+            {
+                <button class="filter-pill @(selectedChannelIds.Contains(channel.Id) ? "active" : "")"
+                        @onclick="@(() => ToggleChannel(channel.Id))">
+                    @channel.Name
+                </button>
+            }
+        }
+    </div>
+
+    <!-- Split view: cards + map -->
+    <div class="split-view">
+        <div class="card-panel">
+            <div class="panel-header">@filteredLocations.Count vandringar</div>
+            @for (var i = 0; i < filteredLocations.Count; i++)
+            {
+                var index = i;
+                var loc = filteredLocations[i];
+                <div class="hike-card @(activeCardIndex == index ? "active" : "")"
+                     @onclick="@(() => OnCardClick(index))">
+                    <img class="hike-card-thumbnail" src="@loc.VideoThumbnail" alt="@loc.PlaceName" loading="lazy" />
+                    <div class="hike-card-content">
+                        <h3 class="hike-card-title">@loc.PlaceName</h3>
+                        <p class="hike-card-location">@loc.Region, @loc.Country</p>
+                        <div class="hike-card-meta">
+                            <span class="hike-badge difficulty">@loc.Difficulty</span>
+                            <span class="hike-badge season">@GetSeasonLabel(loc.Season)</span>
                         </div>
-                    }
-                }
-            </div>
+                        <p class="hike-card-channel">@loc.ChannelName</p>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="map-panel">
+            <div id="map"></div>
         </div>
     </div>
-
-    <div class="row g-0">
-        <div class="col-12">
-            <div id="map" style="height: 80vh; width: 100%;"></div>
-        </div>
-    </div>
-</div>
+}
 
 @code {
     private List<HikeLocationDto> locations = new();
     private List<HikeLocationDto> filteredLocations = new();
     private List<ChannelDto> channels = new();
     private HashSet<int> selectedChannelIds = new();
-    private HashSet<int> selectedSeasons = new() { 0, 1, 2, 3 }; // Alla säsonger valda som standard
+    private HashSet<int> selectedSeasons = new() { 0, 1, 2, 3 };
     private bool isLoading = true;
     private bool mapInitialized = false;
+    private bool needsMapInit = false;
+    private int activeCardIndex = -1;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -127,7 +99,27 @@
         {
             await LoadData();
         }
+        else if (needsMapInit && !mapInitialized)
+        {
+            needsMapInit = false;
+            await InitializeMap();
+        }
     }
+
+    private bool IsSeasonActive(int season)
+    {
+        // Active if this season is selected and not ALL are selected
+        return selectedSeasons.Contains(season) && selectedSeasons.Count < 4;
+    }
+
+    private string GetSeasonLabel(int season) => season switch
+    {
+        0 => "Vår",
+        1 => "Sommar",
+        2 => "Höst",
+        3 => "Vinter",
+        _ => ""
+    };
 
     private string ConvertMarkdownToHtml(string? markdown)
     {
@@ -135,22 +127,13 @@
             return string.Empty;
 
         var html = markdown;
-        
-        // Konvertera rubriker (mindre storlekar för popup)
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h6 style='margin-top: 8px; margin-bottom: 4px; font-size: 0.85em; color: #333;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h6 style='margin-top: 10px; margin-bottom: 5px; font-size: 0.9em; color: #222;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h6 style='margin-top: 12px; margin-bottom: 6px; font-size: 0.95em; color: #111;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
-        
-        // Konvertera bold (**text**)
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^### (.+)$", "<h6 style='margin-top: 8px; margin-bottom: 4px; font-size: 0.85em;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^## (.+)$", "<h6 style='margin-top: 10px; margin-bottom: 5px; font-size: 0.9em;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
+        html = System.Text.RegularExpressions.Regex.Replace(html, @"^# (.+)$", "<h6 style='margin-top: 12px; margin-bottom: 6px; font-size: 0.95em;'>$1</h6>", System.Text.RegularExpressions.RegexOptions.Multiline);
         html = System.Text.RegularExpressions.Regex.Replace(html, @"\*\*(.+?)\*\*", "<strong>$1</strong>");
-        
-        // Konvertera radbrytningar till <br/> för paragrafer
         html = html.Replace("\n\n", "</p><p style='margin: 8px 0; line-height: 1.5;'>");
         html = html.Replace("\n", "<br/>");
-        
-        // Wrappa i en paragraf
         html = $"<p style='margin: 8px 0; line-height: 1.5;'>{html}</p>";
-        
         return html;
     }
 
@@ -158,12 +141,8 @@
     {
         if (string.IsNullOrEmpty(dateString))
             return "";
-        
         if (DateTime.TryParse(dateString, out var date))
-        {
             return date.ToString("yyyy-MM-dd");
-        }
-        
         return dateString;
     }
 
@@ -173,22 +152,8 @@
         {
             locations = await HikeDataService.GetAllLocationsAsync();
             channels = await HikeDataService.GetAllChannelsAsync();
-            
-            // Välj alla kanaler som standard
             selectedChannelIds = new HashSet<int>(channels.Select(c => c.Id));
-
-            if (locations.Count > 0)
-            {
-                // Initiera kartan centrerad på första platsen (Sverige som default)
-                var firstLocation = locations.FirstOrDefault();
-                var centerLat = firstLocation?.Latitude ?? 62.0;
-                var centerLng = firstLocation?.Longitude ?? 15.0;
-
-                await JS.InvokeVoidAsync("mapHelper.initializeMap", "map", centerLat, centerLng, 5);
-                mapInitialized = true;
-
-                await UpdateMapMarkers();
-            }
+            filteredLocations = locations.ToList();
         }
         catch (Exception ex)
         {
@@ -197,7 +162,29 @@
         finally
         {
             isLoading = false;
+            needsMapInit = locations.Count > 0;
             StateHasChanged();
+        }
+    }
+
+    private async Task InitializeMap()
+    {
+        try
+        {
+            var firstLocation = locations.FirstOrDefault();
+            var centerLat = firstLocation?.Latitude ?? 62.0;
+            var centerLng = firstLocation?.Longitude ?? 15.0;
+
+            await JS.InvokeVoidAsync("mapHelper.initializeMap", "map", centerLat, centerLng, 5);
+            mapInitialized = true;
+
+            await UpdateMapMarkers();
+
+            await JS.InvokeVoidAsync("eval", $"document.getElementById('location-count').textContent = '{locations.Count} vandringar'");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error initializing map: {ex.Message}");
         }
     }
 
@@ -205,105 +192,102 @@
     {
         if (!mapInitialized) return;
 
-        // Rensa befintliga markers
         await JS.InvokeVoidAsync("mapHelper.clearMarkers");
 
-        // Filtrera platser baserat på valda kanaler och säsonger
         filteredLocations = locations
             .Where(l => selectedChannelIds.Contains(l.ChannelId) && selectedSeasons.Contains(l.Season))
             .ToList();
 
-        // Lägg till markers för filtrerade platser
         foreach (var location in filteredLocations)
         {
             var formattedSummary = ConvertMarkdownToHtml(location.VideoTalkSummary);
-            
+
             var popupHtml = $@"
-                <div style='min-width: 280px; max-width: 350px; max-height: 450px; overflow-y: auto;'>
-                    <h5 style='margin-bottom: 8px;'>{location.PlaceName} <span style='font-size: 0.7em; font-weight: normal; color: #333;'>({FormatDate(location.PublishedAt)})</span></h5>
-                    <p style='margin-bottom: 8px;'><strong>{location.Region}, {location.Country}</strong></p>
-                    <img src='{location.VideoThumbnail}' style='width: 100%; max-width: 320px; border-radius: 4px;' /><br/>
-                    <div style='margin: 10px 0;'>
-                        <strong>Video:</strong> {location.VideoTitle}<br/>
-                        <strong>Kanal:</strong> {location.ChannelName}<br/>
-                        <strong>Svårighetsgrad:</strong> {location.Difficulty}<br/>
-                        {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {location.Duration}<br/>")}
+                <div class='popup-card'>
+                    <img class='popup-thumbnail' src='{location.VideoThumbnail}' alt='{EscapeHtml(location.PlaceName)}' />
+                    <div class='popup-card-body'>
+                        <h5>{EscapeHtml(location.PlaceName)} <span class='popup-date'>{FormatDate(location.PublishedAt)}</span></h5>
+                        <div class='popup-region'>{EscapeHtml(location.Region)}, {EscapeHtml(location.Country)}</div>
+                        <div class='popup-details'>
+                            <strong>Video:</strong> {EscapeHtml(location.VideoTitle)}<br/>
+                            <strong>Kanal:</strong> {EscapeHtml(location.ChannelName)}<br/>
+                            <strong>Svårighetsgrad:</strong> {EscapeHtml(location.Difficulty)}<br/>
+                            {(string.IsNullOrEmpty(location.Duration) ? "" : $"<strong>Längd:</strong> {EscapeHtml(location.Duration)}<br/>")}
+                        </div>
+                        <div class='popup-summary'>{location.Summary}</div>
+                        {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $@"
+                        <details>
+                            <summary>Vad de pratar om i videon</summary>
+                            <div>{formattedSummary}</div>
+                        </details>")}
+                        <a href='{location.VideoUrl}' target='_blank' class='popup-youtube-btn'>▶ Se video på YouTube</a>
                     </div>
-                    <p style='margin: 10px 0; font-size: 0.95em;'>{location.Summary}</p>
-                    {(string.IsNullOrEmpty(location.VideoTalkSummary) ? "" : $@"
-                    <details style='margin: 15px 0; background: #f8f9fa; border-radius: 6px; padding: 10px;'>
-                        <summary style='cursor: pointer; font-weight: bold; color: #0d6efd;'>📖 Vad de pratar om i videon</summary>
-                        <div style='margin-top: 10px; font-size: 0.9em; color: #333;'>{formattedSummary}</div>
-                    </details>")}
-                    <a href='{location.VideoUrl}' target='_blank' class='youtube-btn' style='margin-top: 10px;'>Se video på YouTube</a>
-                </div>
-            ";
+                </div>";
 
             await JS.InvokeVoidAsync("mapHelper.addMarker", location.Latitude, location.Longitude, popupHtml);
         }
 
-        // Anpassa kartan så alla markers syns
         if (filteredLocations.Count > 0)
         {
             await JS.InvokeVoidAsync("mapHelper.fitBounds");
         }
-    }
 
-    private async Task ToggleChannel(int channelId, bool isSelected)
-    {
-        if (isSelected)
-        {
-            selectedChannelIds.Add(channelId);
-        }
-        else
-        {
-            selectedChannelIds.Remove(channelId);
-        }
-        
-        await UpdateMapMarkers();
+        // Update header count
+        await JS.InvokeVoidAsync("eval", $"document.getElementById('location-count').textContent = '{filteredLocations.Count} vandringar'");
+
+        activeCardIndex = -1;
         StateHasChanged();
     }
 
-    private async Task SelectAllChannels()
+    private string EscapeHtml(string? text)
     {
-        selectedChannelIds = new HashSet<int>(channels.Select(c => c.Id));
-        await UpdateMapMarkers();
-        StateHasChanged();
+        if (string.IsNullOrEmpty(text)) return "";
+        return text.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;").Replace("'", "&#39;");
     }
 
-    private async Task DeselectAllChannels()
+    private async Task OnCardClick(int index)
     {
-        selectedChannelIds.Clear();
-        await UpdateMapMarkers();
-        StateHasChanged();
+        activeCardIndex = index;
+        await JS.InvokeVoidAsync("mapHelper.panToMarker", index);
     }
 
-    private async Task ToggleSeason(int season, bool isSelected)
+    private async Task ToggleSeason(int season)
     {
-        if (isSelected)
+        if (selectedSeasons.Contains(season) && selectedSeasons.Count < 4)
         {
-            selectedSeasons.Add(season);
-        }
-        else
-        {
+            // Already individually selected — deselect it
             selectedSeasons.Remove(season);
+            if (selectedSeasons.Count == 0)
+                selectedSeasons = new HashSet<int> { 0, 1, 2, 3 };
         }
-        
+        else
+        {
+            // Select only this season
+            selectedSeasons = new HashSet<int> { season };
+        }
+
         await UpdateMapMarkers();
-        StateHasChanged();
     }
 
-    private async Task SelectAllSeasons()
+    private async Task ToggleAllSeasons()
     {
         selectedSeasons = new HashSet<int> { 0, 1, 2, 3 };
         await UpdateMapMarkers();
-        StateHasChanged();
     }
 
-    private async Task DeselectAllSeasons()
+    private async Task ToggleChannel(int channelId)
     {
-        selectedSeasons.Clear();
+        if (selectedChannelIds.Contains(channelId))
+        {
+            selectedChannelIds.Remove(channelId);
+            if (selectedChannelIds.Count == 0)
+                selectedChannelIds = new HashSet<int>(channels.Select(c => c.Id));
+        }
+        else
+        {
+            selectedChannelIds.Add(channelId);
+        }
+
         await UpdateMapMarkers();
-        StateHasChanged();
     }
 }

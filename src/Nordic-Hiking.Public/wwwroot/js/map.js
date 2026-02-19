@@ -62,7 +62,11 @@ window.mapHelper = {
 
     addMarker: function (lat, lng, popupHtml) {
         const marker = L.marker([lat, lng]).addTo(this.map);
-        marker.bindPopup(popupHtml);
+        marker.bindPopup(popupHtml, {
+            maxWidth: 340,
+            minWidth: 280,
+            className: 'airbnb-popup'
+        });
         this.markers.push(marker);
         return true;
     },
@@ -77,6 +81,19 @@ window.mapHelper = {
         if (this.markers.length > 0) {
             const group = L.featureGroup(this.markers);
             this.map.fitBounds(group.getBounds().pad(0.1));
+        }
+        return true;
+    },
+
+    panToMarker: function (index) {
+        if (index >= 0 && index < this.markers.length) {
+            const marker = this.markers[index];
+            const latLng = marker.getLatLng();
+            this.map.setView(latLng, Math.max(this.map.getZoom(), 10), {
+                animate: true,
+                duration: 0.5
+            });
+            marker.openPopup();
         }
         return true;
     }
