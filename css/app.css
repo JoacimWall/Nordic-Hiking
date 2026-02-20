@@ -1,0 +1,530 @@
+/* ===== Airbnb-Inspired Design System ===== */
+
+:root {
+    --airbnb-rausch: #FF385C;
+    --airbnb-rausch-dark: #E31C5F;
+    --airbnb-dark: #222222;
+    --airbnb-gray: #717171;
+    --airbnb-light-gray: #F7F7F7;
+    --airbnb-border: #DDDDDD;
+    --airbnb-white: #FFFFFF;
+    --airbnb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.08);
+    --airbnb-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.12);
+    --airbnb-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --airbnb-radius-sm: 8px;
+    --airbnb-radius-md: 12px;
+    --airbnb-radius-lg: 24px;
+    --header-height: 56px;
+}
+
+/* ===== Base Typography ===== */
+
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: var(--airbnb-dark);
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+a {
+    color: var(--airbnb-dark);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--airbnb-rausch);
+}
+
+/* ===== Filter Pills ===== */
+
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--airbnb-border);
+    background: var(--airbnb-white);
+    overflow-x: auto;
+    flex-shrink: 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--airbnb-border);
+    flex-shrink: 0;
+    margin: 0 4px;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--airbnb-radius-lg);
+    border: 1px solid var(--airbnb-border);
+    background: var(--airbnb-white);
+    color: var(--airbnb-dark);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.filter-pill:hover {
+    border-color: var(--airbnb-dark);
+}
+
+.filter-pill.active {
+    background: var(--airbnb-dark);
+    color: var(--airbnb-white);
+    border-color: var(--airbnb-dark);
+}
+
+.filter-pill.active:hover {
+    background: #000;
+    border-color: #000;
+}
+
+/* ===== Split View Layout ===== */
+
+.split-view {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: calc(100vh - var(--header-height) - 50px);
+}
+
+.card-panel {
+    width: 380px;
+    min-width: 380px;
+    overflow-y: auto;
+    padding: 16px 20px;
+    background: var(--airbnb-white);
+    scrollbar-width: thin;
+    scrollbar-color: #ddd transparent;
+}
+
+.card-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.card-panel::-webkit-scrollbar-thumb {
+    background: #ddd;
+    border-radius: 3px;
+}
+
+.map-panel {
+    flex: 1;
+    position: relative;
+}
+
+.map-panel #map {
+    width: 100%;
+    height: 100%;
+}
+
+/* ===== Hike Cards ===== */
+
+.hike-card {
+    display: flex;
+    gap: 16px;
+    padding: 16px;
+    border-radius: var(--airbnb-radius-md);
+    cursor: pointer;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.hike-card:hover {
+    background: var(--airbnb-light-gray);
+}
+
+.hike-card.active {
+    background: var(--airbnb-light-gray);
+    border-color: var(--airbnb-border);
+    box-shadow: var(--airbnb-shadow-sm);
+}
+
+.hike-card + .hike-card {
+    border-top: 1px solid var(--airbnb-light-gray);
+}
+
+.hike-card-thumbnail {
+    width: 120px;
+    height: 80px;
+    border-radius: var(--airbnb-radius-sm);
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.hike-card-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hike-card-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--airbnb-dark);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.hike-card-location {
+    font-size: 0.8rem;
+    color: var(--airbnb-gray);
+    margin: 0;
+}
+
+.hike-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    flex-wrap: wrap;
+}
+
+.hike-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: var(--airbnb-radius-lg);
+    font-size: 0.7rem;
+    font-weight: 500;
+    background: var(--airbnb-light-gray);
+    color: var(--airbnb-gray);
+}
+
+.hike-badge.difficulty {
+    background: #FFF0F3;
+    color: var(--airbnb-rausch);
+}
+
+.hike-badge.season {
+    background: #F0F7FF;
+    color: #0066CC;
+}
+
+.hike-card-channel {
+    font-size: 0.75rem;
+    color: var(--airbnb-gray);
+    margin: 0;
+}
+
+/* ===== Panel Header ===== */
+
+.panel-header {
+    padding: 0 16px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--airbnb-gray);
+}
+
+/* ===== Loading ===== */
+
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: var(--airbnb-gray);
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--airbnb-light-gray);
+    border-top-color: var(--airbnb-rausch);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 8px;
+    color: var(--airbnb-gray);
+    text-align: center;
+    padding: 24px;
+}
+
+.empty-state-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+/* ===== Leaflet Popup — Airbnb Style ===== */
+
+.leaflet-popup-content-wrapper {
+    border-radius: var(--airbnb-radius-md) !important;
+    box-shadow: var(--airbnb-shadow-lg) !important;
+    padding: 0 !important;
+    overflow: hidden;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: var(--airbnb-dark) !important;
+}
+
+.leaflet-popup-tip {
+    box-shadow: var(--airbnb-shadow-sm) !important;
+}
+
+.popup-card {
+    min-width: 280px;
+    max-width: 340px;
+}
+
+.popup-card img.popup-thumbnail {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+}
+
+.popup-card-body {
+    padding: 14px 16px;
+}
+
+.popup-card-body h5 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 2px;
+    color: var(--airbnb-dark);
+}
+
+.popup-card-body .popup-date {
+    font-size: 0.75rem;
+    color: var(--airbnb-gray);
+    font-weight: 400;
+}
+
+.popup-card-body .popup-region {
+    font-size: 0.85rem;
+    color: var(--airbnb-gray);
+    margin: 4px 0 10px;
+}
+
+.popup-card-body .popup-details {
+    font-size: 0.8rem;
+    color: var(--airbnb-dark);
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.popup-card-body .popup-details strong {
+    color: var(--airbnb-dark);
+}
+
+.popup-card-body .popup-summary {
+    font-size: 0.8rem;
+    color: #484848;
+    margin: 10px 0;
+    line-height: 1.6;
+}
+
+.popup-card-body details {
+    margin: 12px 0;
+    background: var(--airbnb-light-gray);
+    border-radius: var(--airbnb-radius-sm);
+    padding: 10px;
+    font-size: 0.8rem;
+}
+
+.popup-card-body details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--airbnb-rausch);
+    font-size: 0.8rem;
+}
+
+.popup-card-body details > div {
+    margin-top: 8px;
+    color: #484848;
+    line-height: 1.6;
+}
+
+.popup-youtube-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--airbnb-rausch);
+    color: var(--airbnb-white) !important;
+    text-decoration: none !important;
+    border-radius: var(--airbnb-radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: background 0.15s ease;
+    margin-top: 4px;
+}
+
+.popup-youtube-btn:hover {
+    background: var(--airbnb-rausch-dark);
+    color: var(--airbnb-white) !important;
+}
+
+/* ===== Leaflet Layer Control ===== */
+
+.leaflet-control-layers {
+    border-radius: var(--airbnb-radius-md) !important;
+    box-shadow: var(--airbnb-shadow-md) !important;
+    border: none !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.8rem !important;
+}
+
+/* ===== Blazor Loading Progress ===== */
+
+.loading-progress {
+    position: absolute;
+    display: block;
+    width: 6rem;
+    height: 6rem;
+    inset: 30vh 0 auto 0;
+    margin: 0 auto;
+}
+
+.loading-progress circle {
+    fill: none;
+    stroke: var(--airbnb-light-gray);
+    stroke-width: 0.5rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
+
+.loading-progress circle:last-child {
+    stroke: var(--airbnb-rausch);
+    stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+    transition: stroke-dasharray 0.05s ease-in-out;
+}
+
+.loading-progress-text {
+    position: absolute;
+    text-align: center;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    color: var(--airbnb-gray);
+    inset: calc(30vh + 2.5rem) 0 auto 0;
+}
+
+.loading-progress-text:after {
+    content: var(--blazor-load-percentage-text, "Loading");
+}
+
+/* ===== Error UI ===== */
+
+#blazor-error-ui {
+    color-scheme: light only;
+    background: #FFF0F3;
+    bottom: 0;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.08);
+    display: none;
+    left: 0;
+    padding: 12px 20px;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    font-family: 'Inter', sans-serif;
+    color: var(--airbnb-rausch);
+    font-size: 0.875rem;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 12px;
+    top: 10px;
+}
+
+.blazor-error-boundary {
+    background: var(--airbnb-rausch);
+    padding: 1rem 1.5rem;
+    color: white;
+    border-radius: var(--airbnb-radius-sm);
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred.";
+}
+
+/* ===== Mobile Responsive ===== */
+
+@media (max-width: 768px) {
+    .split-view {
+        flex-direction: column;
+        height: calc(100vh - var(--header-height) - 50px);
+    }
+
+    .card-panel {
+        width: 100%;
+        min-width: unset;
+        max-height: 40vh;
+        min-height: 200px;
+        border-bottom: 1px solid var(--airbnb-border);
+    }
+
+    .map-panel {
+        min-height: 40vh;
+    }
+
+    .hike-card {
+        padding: 12px;
+    }
+
+    .hike-card-thumbnail {
+        width: 90px;
+        height: 64px;
+    }
+
+    .filter-bar {
+        padding: 10px 16px;
+    }
+
+    .filter-pill {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+}
